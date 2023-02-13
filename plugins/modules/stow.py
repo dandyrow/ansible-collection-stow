@@ -100,11 +100,30 @@ EXAMPLES = r'''
 
 RETURN = r''' # '''
 
+# pylint: disable=wrong-import-position
+from ansible.module_utils.basic import AnsibleModule
+# pylint: enable=wrong-import-position
+
+
+def init_module():
+    # type: () -> AnsibleModule
+    """initiates an AnsibleModule with the argument spec"""
+    return AnsibleModule(
+        argument_spec=dict(
+            src=dict(type='path', required=True, aliases=['dir']),
+            dest=dict(type='path', aliases=['target']),
+            package=dict(type='list', elements='str', required=True, aliases=['pkg']),
+            force=dict(type='bool', default=False),
+            state=dict(type='str', default='present', choices=['present', 'absent', 'restow'])
+        ),
+        supports_check_mode=True
+    )
+
 
 def main():
     # type: () -> None
     """runs Ansible stow module"""
-    return
+    module = init_module()
 
 
 if __name__ == '__main__':
