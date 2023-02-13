@@ -41,7 +41,7 @@ def set_module_args(args):
     # type: (dict[str, bool | str | typing.List[str]]) -> None
     """prepare arguments so that they will be picked up during module creation"""
     arg_str = json.dumps({'ANSIBLE_MODULE_ARGS': args})
-    basic._ANSIBLE_ARGS = to_bytes(arg_str) # pylint: disable=protected-access
+    basic._ANSIBLE_ARGS = to_bytes(arg_str)  # pylint: disable=protected-access
 
 
 def exit_json(self, **kwargs):
@@ -50,7 +50,7 @@ def exit_json(self, **kwargs):
     raise AnsibleExitJson(kwargs)
 
 
-def fail_json(self, msg, **kwargs): #pylint: disable=unused-argument
+def fail_json(self, msg, **kwargs):  # pylint: disable=unused-argument
     # type: (stow.AnsibleModule, typing.Any, typing.Any) -> typing.NoReturn
     """raises AnsibleFailJson. Mock fail_json method of AnsibleModule class for testing purposes"""
     kwargs['failed'] = True
@@ -133,6 +133,7 @@ class TestModuleInit(unittest.TestCase):
         module = stow.init_module()
         self.assertIsInstance(module, stow.AnsibleModule)
         # no need to check present here as it is verified in other tests
+
 
 if __name__ == '__main__':
     unittest.main()
