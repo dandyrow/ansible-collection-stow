@@ -34,4 +34,4 @@ jobs:
       - name: Install dependencies
         run: pip3 install ansible-core
       - name: Run unit tests
-        run: ansible-test unit --docker default -v
+        run: ansible-test units --docker default -v
