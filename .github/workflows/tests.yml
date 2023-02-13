@@ -11,7 +11,7 @@ jobs:
         with:
           python-version: '3.10'
       - name: Install dependencies
-        run: apt install ansible-core
+        run: pip3 install ansible-core
       - name: Run sanity tests
         run: ansible-test sanity --docker default -v
   unit:
@@ -23,6 +23,6 @@ jobs:
         with:
           python-version: '3.10'
       - name: Install dependencies
-        run: apt install ansible-core
+        run: pip3 install ansible-core
       - name: Run sanity tests
         run: ansible-test unit --docker default -v
