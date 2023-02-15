@@ -101,8 +101,27 @@ EXAMPLES = r'''
 RETURN = r''' # '''
 
 # pylint: disable=wrong-import-position
+import os
+
+from collections import namedtuple
 from ansible.module_utils.basic import AnsibleModule
 # pylint: enable=wrong-import-position
+
+
+State = {
+    'present': '--stow',
+    'absent': '--delete',
+    'restow': '--restow'
+}  # type: dict[str, str]
+
+
+Params = namedtuple('Params', [
+    'source_directory',
+    'target_directory',
+    'packages',
+    'force',
+    'stow_flag'
+])
 
 
 def init_module():
@@ -120,10 +139,26 @@ def init_module():
     )
 
 
+def init_params(module_params):
+    """takes in module parameters handed in from Ansible and returns them in a namedtuple"""
+    dest = module_params['dest']
+    if dest is None:
+        dest = os.path.dirname(module_params['src'])
+
+    return Params(
+        source_directory=module_params['src'],
+        target_directory=dest,
+        packages=module_params['package'],
+        force=module_params['force'],
+        stow_flag=State[module_params['state']]
+    )
+
+
 def main():
     # type: () -> None
     """runs Ansible stow module"""
     module = init_module()
+    params = init_params(module.params)
 
 
 if __name__ == '__main__':

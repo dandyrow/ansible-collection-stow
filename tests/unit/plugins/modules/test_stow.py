@@ -17,12 +17,14 @@
 
 
 from __future__ import (absolute_import, division, print_function)
+from collections import namedtuple
 __metaclass__ = type
 
 
-import unittest
+# import unittest
 import json
 
+from unittest import TestCase, main
 from ansible.module_utils import basic
 from ansible.module_utils.compat import typing
 from ansible.module_utils.common.text.converters import to_bytes
@@ -58,7 +60,7 @@ def fail_json(self, msg, **kwargs):  # pylint: disable=unused-argument
     raise AnsibleFailJson(kwargs)
 
 
-class TestModuleInit(unittest.TestCase):
+class TestModuleInit(TestCase):
     """tests to ensure parameters are configured correctly in argument spec of Ansible Module"""
 
     def setUp(self):
@@ -135,5 +137,82 @@ class TestModuleInit(unittest.TestCase):
         # no need to check present here as it is verified in other tests
 
 
+class TestParamsInit(TestCase):
+    """tests the storage of module parameters into a namedtuple"""
+
+    def test_creation(self):
+        """test creation of namedtuple with all parameters set"""
+        mock_module_params = {
+            'src': '/src/path',
+            'dest': '/dest/path',
+            'package': ['zsh', 'starship'],
+            'force': True,
+            'state': 'present'
+        }
+        expected_params = stow.Params(
+            source_directory='/src/path',
+            target_directory='/dest/path',
+            packages=['zsh', 'starship'],
+            force=True,
+            stow_flag='--stow'
+        )
+        actual_params = stow.init_params(mock_module_params)
+        self.assertTupleEqual(expected_params, actual_params)
+
+    def test_creation_without_dest(self):
+        """test creation of namedtuple without destintation set"""
+        mock_module_params = {
+            'src': '/src/path',
+            'dest': None,
+            'package': ['zsh', 'starship'],
+            'force': True,
+            'state': 'present'
+        }
+        expected_params = stow.Params(
+            source_directory='/src/path',
+            target_directory='/src',
+            packages=['zsh', 'starship'],
+            force=True,
+            stow_flag='--stow'
+        )
+        actual_params = stow.init_params(mock_module_params)
+        self.assertTupleEqual(expected_params, actual_params)
+
+    def test_other_stow_flags(self):
+        """test creation of namedtuple with other state values"""
+        mock_module_params = {
+            'src': '/src/path',
+            'dest': '/dest/path',
+            'package': ['zsh', 'starship'],
+            'force': True,
+            'state': 'absent'
+        }
+        expected_params = stow.Params(
+            source_directory='/src/path',
+            target_directory='/dest/path',
+            packages=['zsh', 'starship'],
+            force=True,
+            stow_flag='--delete'
+        )
+        actual_params = stow.init_params(mock_module_params)
+        self.assertTupleEqual(expected_params, actual_params)
+        mock_module_params = {
+            'src': '/src/path',
+            'dest': '/dest/path',
+            'package': ['zsh', 'starship'],
+            'force': True,
+            'state': 'restow'
+        }
+        expected_params = stow.Params(
+            source_directory='/src/path',
+            target_directory='/dest/path',
+            packages=['zsh', 'starship'],
+            force=True,
+            stow_flag='--restow'
+        )
+        actual_params = stow.init_params(mock_module_params)
+        self.assertTupleEqual(expected_params, actual_params)
+
+
 if __name__ == '__main__':
-    unittest.main()
+    main()
