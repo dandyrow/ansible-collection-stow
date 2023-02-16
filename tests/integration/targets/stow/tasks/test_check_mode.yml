@@ -1,0 +1,9 @@
+---
+- name: Run stow module in check mode
+  dandyrow.stow.stow:
+    src: "{{ source_dir }}"
+    dest: "{{ target_dir }}"
+    package:
+      - zsh
+      - starship
+  check_mode: true
