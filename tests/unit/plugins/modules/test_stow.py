@@ -140,7 +140,7 @@ class TestModuleInit(TestCase):
 class TestParamsInit(TestCase):
     """tests the storage of module parameters into a namedtuple"""
 
-    def test_creation(self):
+    def test_params_creation(self):
         """test creation of namedtuple with all parameters set"""
         mock_module_params = {
             'src': '/src/path',
@@ -212,6 +212,36 @@ class TestParamsInit(TestCase):
         )
         actual_params = stow.init_params(mock_module_params)
         self.assertTupleEqual(expected_params, actual_params)
+
+
+class TestGenerateStowCmd(TestCase):
+    """tests function which generates stow command string"""
+
+    def test_default_command_gen(self):
+        """test generation of stow command with simulate set to default (True)"""
+        params = stow.Params(
+            source_directory='/src',
+            target_directory='/dest',
+            packages=['zsh', 'neovim'],
+            force=False,
+            stow_flag='--stow'
+        )
+        expected_result = 'stow --verbose --simulate --dir /src --target /dest --stow zsh --stow neovim'
+        actual_result = stow.generate_stow_command(params)
+        self.assertEqual(expected_result, actual_result)
+
+    def test_simulated_false(self):
+        """test generation of stow command with simulate set to false"""
+        params = stow.Params(
+            source_directory='/src',
+            target_directory='/dest',
+            packages=['zsh', 'neovim'],
+            force=False,
+            stow_flag='--stow'
+        )
+        expected_result = 'stow --verbose --dir /src --target /dest --stow zsh --stow neovim'
+        actual_result = stow.generate_stow_command(params, False)
+        self.assertEqual(expected_result, actual_result)
 
 
 if __name__ == '__main__':

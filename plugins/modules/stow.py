@@ -154,11 +154,27 @@ def init_params(module_params):
     )
 
 
+def generate_stow_command(params, simulate=True):
+    # type: (Params, bool) -> str
+    """returns a runnable stow command"""
+    pkg_str = ' '.join(['{0} {1}'.format(params.stow_flag, package) for package in params.packages])
+
+    if simulate:
+        return 'stow --verbose --simulate --dir {0} --target {1} {2}'.format(
+            params.source_directory, params.target_directory, pkg_str)
+
+    return 'stow --verbose --dir {0} --target {1} {2}'.format(
+        params.source_directory, params.target_directory, pkg_str)
+
+
 def main():
     # type: () -> None
     """runs Ansible stow module"""
     module = init_module()
     params = init_params(module.params)
+    result = {'invocation': module.params}
+
+    cmd = generate_stow_command(params, True)
 
 
 if __name__ == '__main__':
