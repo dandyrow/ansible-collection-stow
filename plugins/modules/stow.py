@@ -24,7 +24,7 @@ DOCUMENTATION = r'''
 ---
 module: stow
 short_description: Module to interact with the GNU stow symbolic link manager.
-version_added: "1.0.0"
+version_added: "0.1.0"
 author: Daniel Lowry (@dandyrow)
 description: Module to interact with the GNU stow symbolic link manager.
 options:
@@ -180,6 +180,14 @@ def main():
         module.fail_json('Target directory does not exist or is not a directory', **result)
 
     cmd = generate_stow_command(params, True)
+    return_code, stdout, stderr = module.run_command(cmd)
+
+    result['rc'] = return_code
+    result['stdout'] = stdout
+    result['stderr'] = stderr
+
+    if module.check_mode:
+        module.exit_json(**result)
 
 
 if __name__ == '__main__':
