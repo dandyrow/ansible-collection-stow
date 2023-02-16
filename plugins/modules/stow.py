@@ -174,6 +174,11 @@ def main():
     params = init_params(module.params)
     result = {'invocation': module.params}
 
+    if os.path.isdir(params.source_directory):
+        module.fail_json('Source directory does not exist or is not a directory', **result)
+    if os.path.isdir(params.target_directory):
+        module.fail_json('Target directory does not exist or is not a directory', **result)
+
     cmd = generate_stow_command(params, True)
 
 
