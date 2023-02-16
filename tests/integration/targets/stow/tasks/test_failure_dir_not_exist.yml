@@ -5,9 +5,9 @@
     package: 
       - zsh
   ignore_errors: true
-  register: dir_not_exist_output
+  register: stow_output
 
 - name: Assert module failed due to non-existant source directory
   ansible.builtin.assert:
     that:
-      - "'does not exist' in dir_not_exist_output.msg"
+      - "'does not exist' in stow_output.msg"

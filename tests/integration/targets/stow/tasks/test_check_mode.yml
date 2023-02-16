@@ -7,3 +7,9 @@
       - zsh
       - starship
   check_mode: true
+  register: stow_output
+
+- name: Assert nothing was changed while in check_mode
+  ansible.builtin.assert:
+    that:
+      - stow_output is not changed
