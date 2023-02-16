@@ -4,17 +4,16 @@
     name: stow
     state: present
 
-- name: Create test target directory in {{ target_dir }}
+- name: Create test directory structure
   ansible.builtin.file:
-    path: "{{ target_dir }}"
+    path: "{{ item }}"
     state: directory
     mode: '0755'
-
-- name: Create test source directory in {{ source_dir }}
-  ansible.builtin.file:
-    path: "{{ source_dir }}"
-    state: directory
-    mode: '0755'
+  with_items:
+    - "{{ target_dir }}"
+    - "{{ source_dir }}"
+    - "{{ source_dir }}/zsh"
+    - "{{ source_dir }}/nvim"
 
 - name: Run first test
   ansible.builtin.include_tasks: test_failure_dir_not_exist.yml

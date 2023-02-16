@@ -5,7 +5,7 @@
     dest: "{{ target_dir }}"
     package:
       - zsh
-      - starship
+      - nvim
   check_mode: true
   register: stow_output
 
