@@ -126,7 +126,7 @@ Params = namedtuple('Params', [
 
 def init_module():
     # type: () -> AnsibleModule
-    """initiates an AnsibleModule with the argument spec"""
+    """Initiates an AnsibleModule with the argument spec"""
     return AnsibleModule(
         argument_spec=dict(
             src=dict(type='path', required=True, aliases=['dir']),
@@ -140,7 +140,7 @@ def init_module():
 
 
 def init_params(module_params):
-    """takes in module parameters handed in from Ansible and returns them in a namedtuple"""
+    """Takes in module parameters handed in from Ansible and returns them in a namedtuple"""
     dest = module_params['dest']
     if dest is None:
         dest = os.path.dirname(module_params['src'])
@@ -154,9 +154,22 @@ def init_params(module_params):
     )
 
 
+def validate_directories(directories, fail_func):
+    """Call passed in function if any of the passed in directories don't exist.
+    Function must take a message str as first argument"""
+    err_msg = ''
+
+    for directory in directories:
+        if not os.path.isdir(directory):
+            err_msg += 'Diretory \'{0}\' does not exist or is not a directory. '.format(directory)
+
+    if err_msg != '':
+        fail_func(err_msg)
+
+
 def generate_stow_command(params, simulate=True):
     # type: (Params, bool) -> str
-    """returns a runnable stow command"""
+    """Returns a runnable stow command"""
     pkg_str = ' '.join(['{0} {1}'.format(params.stow_flag, package) for package in params.packages])
 
     if simulate:
@@ -169,25 +182,17 @@ def generate_stow_command(params, simulate=True):
 
 def main():
     # type: () -> None
-    """runs Ansible stow module"""
+    """Runs Ansible stow module"""
     module = init_module()
     params = init_params(module.params)
-    result = {'invocation': module.params}
 
-    if os.path.isdir(params.source_directory):
-        module.fail_json('Source directory does not exist or is not a directory', **result)
-    if os.path.isdir(params.target_directory):
-        module.fail_json('Target directory does not exist or is not a directory', **result)
+    validate_directories([params.source_directory, params.target_directory], module.fail_json)
 
     cmd = generate_stow_command(params, True)
     return_code, stdout, stderr = module.run_command(cmd)
 
-    result['rc'] = return_code
-    result['stdout'] = stdout
-    result['stderr'] = stderr
-
     if module.check_mode:
-        module.exit_json(**result)
+        module.exit_json()
 
 
 if __name__ == '__main__':
