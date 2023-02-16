@@ -17,8 +17,6 @@
 
 
 from __future__ import (absolute_import, division, print_function)
-from collections import namedtuple
-from genericpath import isdir
 __metaclass__ = type
 
 
@@ -26,7 +24,7 @@ __metaclass__ = type
 import json
 
 from unittest import TestCase, main
-from unittest.mock import patch
+# from unittest.mock import patch
 from ansible.module_utils import basic
 from ansible.module_utils.compat import typing
 from ansible.module_utils.common.text.converters import to_bytes
@@ -262,19 +260,16 @@ class TestDirValidation(TestCase):
         kwargs['msg'] = msg
         raise AnsibleFailJson(kwargs)
 
-    @patch('plugins.modules.stow.os.path')
-    # @patch('plugins.modules.stow.AnsibleModule')
-    def test_calls_function_if_dir_not_exist(self, mock_path):
+    def test_calls_function_if_dir_not_exist(self):
         """Tests passed in function called if one of passed in directories doesn't exist"""
-        mock_path.isdir = self.isdir
+        stow.os.path.isdir = self.isdir
 
         with self.assertRaises(AnsibleFailJson):
             stow.validate_directories(['test', 'folder'], self.fail_json)
 
-    @patch('plugins.modules.stow.os.path')
-    def test_function_does_nothing_if_dir_exists(self, mock_path):
+    def test_function_does_nothing_if_dir_exists(self):
         """Tests that nothing happens if all directories exist"""
-        mock_path.isdir = self.isdir
+        stow.os.path.isdir = self.isdir
         stow.validate_directories(['/this/path/exists'], self.fail_json)
 
 
