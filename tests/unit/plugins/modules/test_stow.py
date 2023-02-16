@@ -273,5 +273,23 @@ class TestDirValidation(TestCase):
         stow.validate_directories(['/this/path/exists'], self.fail_json)
 
 
+class TestCommandResultParsing(TestCase):
+    """Tests the command result parsing function"""
+
+    def test_parses_values_to_dictionary(self):
+        """Tests the command result parsing function works correctly"""
+        return_code = 2
+        stdout = 'this is standard out.\n'
+        stderr = 'this is standard error.\nIt has an error.'
+
+        result = stow.parse_command_result(return_code, stdout, stderr)
+
+        self.assertEqual(result['rc'], 2)
+        self.assertEqual(result['stdout'], 'this is standard out.\n')
+        self.assertEqual(result['stdout_lines'], 'this is standard out.\n'.splitlines())
+        self.assertEqual(result['stderr'], 'this is standard error.\nIt has an error.')
+        self.assertEqual(result['stderr_lines'], 'this is standard error.\nIt has an error.'.splitlines())
+
+
 if __name__ == '__main__':
     main()

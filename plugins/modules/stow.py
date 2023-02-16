@@ -180,6 +180,21 @@ def generate_stow_command(params, simulate=True):
         params.source_directory, params.target_directory, pkg_str)
 
 
+def parse_command_result(return_code, stdout, stderr):
+    # type: (int, str, str) -> dict[str, str | int | list[str]]
+    """Takes the outputs from run_command & stores them in a dictionary.
+    Adds stdout & stderr lines to dictionary too."""
+    stdout_lines = stdout.splitlines()
+    stderr_lines = stderr.splitlines()
+    return {
+        'rc': return_code,
+        'stdout': stdout,
+        'stdout_lines': stdout_lines,
+        'stderr': stderr,
+        'stderr_lines': stderr_lines
+    }
+
+
 def main():
     # type: () -> None
     """Runs Ansible stow module"""
@@ -190,9 +205,10 @@ def main():
 
     cmd = generate_stow_command(params, True)
     return_code, stdout, stderr = module.run_command(cmd)
+    result = parse_command_result(return_code, stdout, stderr)
 
     if module.check_mode:
-        module.exit_json()
+        module.exit_json(**result)
 
 
 if __name__ == '__main__':
