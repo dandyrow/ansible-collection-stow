@@ -229,7 +229,7 @@ class TestGenerateStowCmd(TestCase):
             stow_flag='--stow'
         )
         expected_result = 'stow --verbose --simulate --dir /src --target /dest --stow zsh --stow neovim'
-        actual_result = stow.generate_stow_command(params)
+        actual_result = stow.generate_stow_command(params, True)
         self.assertEqual(expected_result, actual_result)
 
     def test_simulated_false(self):
