@@ -47,7 +47,7 @@ jobs:
           - default
           - alpine3
           - centos7
-          - fedora37
+          - fedora36
           - opensuse15
           - ubuntu2004
           - ubuntu2204
