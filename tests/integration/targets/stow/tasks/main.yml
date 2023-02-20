@@ -15,8 +15,60 @@
     - "{{ source_dir }}/zsh"
     - "{{ source_dir }}/nvim"
 
-- name: Run first test
-  ansible.builtin.include_tasks: test_failure_dir_not_exist.yml
+- name: Create test files
+  ansible.builtin.file:
+    path: "{{ item }}"
+    state: touch
+  with_items: 
+    - "{{ source_dir }}/zsh/.zshrc"
+    - "{{ source_dir }}/nvim/.vimrc"
+    - "{{ source_dir }}/nvim/plugin.lua"
 
-- name: Run second test
-  ansible.builtin.include_tasks: test_check_mode.yml
+- name: Test failure when directory doesn't exist
+  dandyrow.stow.stow:
+    src: /path/doesnt/exist
+    package: 
+      - zsh
+  ignore_errors: true
+  register: stow_output
+
+- name: Assert module failed due to non-existant source directory
+  ansible.builtin.assert:
+    that:
+      - "'does not exist' in stow_output.msg"
+
+- name: Run stow module in check mode
+  dandyrow.stow.stow:
+    src: "{{ source_dir }}"
+    dest: "{{ target_dir }}"
+    package:
+      - zsh
+      - nvim
+  check_mode: true
+  register: stow_output
+
+- name: Assert nothing was changed while in check_mode
+  ansible.builtin.assert:
+    that:
+      - stow_output is not changed
+
+- name: Stow nvim config files
+  dandyrow.stow.stow:
+    src: "{{ source_dir }}"
+    dest: "{{ target_dir }}"
+    package: ['nvim']
+  register: stow_output
+
+- name: Assert stow made changes
+  ansible.builtin.assert:
+    that:
+      - stow_output is changed
+
+- name: Check files have been stowed
+  ansible.builtin.file:
+    path: "{{ item }}"
+    state: link
+  check_mode: true
+  with_items:
+    - "{{ target_dir }}/.vimrc"
+    - "{{ target_dir }}/plugin.lua"
