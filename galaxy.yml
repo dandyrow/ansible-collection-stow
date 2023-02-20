@@ -18,3 +18,6 @@ build_ignore:
   - output
   - __pycache__
   - '*_cache'
+  - .coverage
+  - .pylintrc
+  - .git*
