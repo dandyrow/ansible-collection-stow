@@ -167,7 +167,7 @@ def validate_directories(directories, fail_func):
         fail_func(err_msg)
 
 
-def generate_stow_command(params, simulate=True):
+def generate_stow_command(params, simulate):
     # type: (Params, bool) -> str
     """Returns a runnable stow command"""
     pkg_str = ' '.join(['{0} {1}'.format(params.stow_flag, package) for package in params.packages])
@@ -209,6 +209,18 @@ def main():
 
     if module.check_mode:
         module.exit_json(**result)
+
+    cmd = generate_stow_command(params, False)
+    return_code, stdout, stderr = module.run_command(cmd)
+    result = parse_command_result(return_code, stdout, stderr)
+
+    if 'LINK:' in stderr:
+        result['changed'] = True
+
+    if return_code != 0:
+        module.fail_json('Error occurred during stow execution. See stderr for details.', **result)
+
+    module.exit_json(**result)
 
 
 if __name__ == '__main__':
