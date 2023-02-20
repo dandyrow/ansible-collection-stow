@@ -1,0 +1,13 @@
+---
+- name: Test failure when directory doesn't exist
+  dandyrow.stow.stow:
+    src: /path/doesnt/exist
+    package: 
+      - zsh
+  ignore_errors: true
+  register: stow_output
+
+- name: Assert module failed due to non-existant source directory
+  ansible.builtin.assert:
+    that:
+      - "'does not exist' in stow_output.msg"
