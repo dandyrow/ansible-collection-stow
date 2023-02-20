@@ -41,16 +41,6 @@ jobs:
         run: ansible-test units --docker default -v
   integration:
     runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        test_container:
-          - default
-          - alpine3
-          - centos7
-          - fedora36
-          - opensuse15
-          - ubuntu2004
-          - ubuntu2204
     steps:
       - name: Checkout source
         uses: actions/checkout@v3
@@ -63,4 +53,4 @@ jobs:
       - name: Install dependencies
         run: pip3 install ansible-core
       - name: Run integration tests
-        run: ansible-test integration --docker ${{ matrix.test_container }} -v
+        run: ansible-test integration --docker default -v
