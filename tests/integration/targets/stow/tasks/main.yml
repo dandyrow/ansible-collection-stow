@@ -1,22 +1,10 @@
 ---
-- name: Install GNU stow
-  ansible.builtin.package:
-    name: stow
-    state: present
+- name: Setup test environment
+  ansible.builtin.include_tasks: setup.yml
 
-- name: Create test directory structure
-  ansible.builtin.file:
-    path: "{{ item }}"
-    state: directory
-    mode: '0755'
-  with_items:
-    - "{{ target_dir }}"
-    - "{{ source_dir }}"
-    - "{{ source_dir }}/zsh"
-    - "{{ source_dir }}/nvim"
-
-- name: Run first test
-  ansible.builtin.include_tasks: test_failure_dir_not_exist.yml
-
-- name: Run second test
-  ansible.builtin.include_tasks: test_check_mode.yml
+- name: Run integration tests
+  ansible.builtin.include_tasks: "{{ item }}"
+  with_items: 
+    - test_param_validation.yml
+    - test_check_mode.yml
+    - test_stow_execution.yml
