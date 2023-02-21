@@ -214,8 +214,7 @@ def main():
     return_code, stdout, stderr = module.run_command(cmd)
     result = parse_command_result(return_code, stdout, stderr)
 
-    if 'LINK:' in stderr:
-        result['changed'] = True
+    result['changed'] = return_code == 0 and 'LINK:' in stderr
 
     if return_code != 0:
         module.fail_json('Error occurred during stow execution. See stderr for details.', **result)
