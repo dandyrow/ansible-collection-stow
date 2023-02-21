@@ -59,6 +59,7 @@ options:
         description: Whether to delete conflicting files in destination directory.
         type: bool
         default: No
+        version_added: 0.3.0
 '''
 
 
