@@ -1,3 +1,7 @@
 # Ansible Collection - dandyrow.stow
 
-Documentation for the collection.
+This collection is for the stow module which allows Ansible to interact with the GNU stow symlink manager.
+
+I decided to create this module as I wanted to automate the deployment of my dotfiles on Linux systems and they are organised into packages which can be installed using GNU stow. Dotfiles repo can be found [here](https://github.com/dandyrow/dotfiles) if you're interested.
+
+You can find the Ansible Galaxy page for this collection [here](https://galaxy.ansible.com/dandyrow/stow).
