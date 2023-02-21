@@ -72,3 +72,15 @@
   with_items:
     - "{{ target_dir }}/.vimrc"
     - "{{ target_dir }}/plugin.lua"
+
+- name: Stow nvim config files
+  dandyrow.stow.stow:
+    src: "{{ source_dir }}"
+    dest: "{{ target_dir }}"
+    package: ['nvim']
+  register: stow_output
+
+- name: Assert idempotency
+  ansible.builtin.assert:
+    that:
+      - stow_output is not changed
