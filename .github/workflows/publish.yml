@@ -1,5 +1,5 @@
 ---
-name: Release
+name: Build & publish collection on Ansible Galaxy and build & publish documentation on GitHub Pages
 
 on:
   push:
