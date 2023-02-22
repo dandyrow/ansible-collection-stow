@@ -82,7 +82,7 @@ jobs:
         run: pip3 install ansible-core antsibull-docs
 
       - name: Install collection locally
-        run: ansible-galaxy collection install dandyrow-stow-0.3.0-rc.tar.gz
+        run: ansible-galaxy collection install dandyrow-stow-${{ github.ref_name }}.tar.gz
 
       - name: Generate sphinx files
         run: |
