@@ -1,0 +1,90 @@
+---
+name: Update documentation for version released to Galaxy
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: "pages"
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@v3
+        with:
+          path: ansible_collections/dandyrow/stow
+
+      - name: Set up Python
+        uses: actions/setup-python@v3
+        with:
+          python-version: '3.10'
+
+      - name: Install build dependencies
+        run: pip3 install ansible-core
+
+      - name: Build collection tarball
+        working-directory: ansible_collections/dandyrow/stow
+        run: ansible-galaxy collection build
+
+      - name: Upload collection build
+        uses: actions/upload-artifact@v3
+        with:
+          name: collection_tarball
+          path: ansible_collections/dandyrow/stow/dandyrow-stow-1.0.0.tar.gz
+          if-no-files-found: error
+          retention-days: 1
+
+  build-docsite:
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
+      - name: Download a Build Artifact
+        uses: actions/download-artifact@v3
+        with:
+          name: collection_tarball
+
+      - name: Set up Python
+        uses: actions/setup-python@v3
+        with:
+          python-version: '3.10'
+
+      - name: Install ansible & antsibull-docs
+        run: pip3 install ansible-core antsibull-docs
+
+      - name: Install collection locally
+        run: ansible-galaxy collection install dandyrow-stow-1.0.0.tar.gz
+
+      - name: Generate sphinx files
+        run: |
+          mkdir docs
+          antsibull-docs sphinx-init --use-current --dest-dir docs dandyrow.stow
+
+      - name: Build docsite
+        working-directory: docs
+        run: |
+          pip3 install -r requirements.txt
+          ./build.sh
+
+      - name: Upload pages artifact
+        uses: actions/upload-pages-artifact@v1
+        with:
+          path: docs/build/html/
+
+  deploy-docs:
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    needs: build-docsite
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v1
