@@ -31,10 +31,6 @@ from ansible.module_utils.common.text.converters import to_bytes
 from ansible_collections.dandyrow.stow.plugins.modules import stow
 
 
-class AnsibleExitJson(Exception):
-    """Exception class to be raised by module.exit_json and caught by the test case"""
-
-
 class AnsibleFailJson(Exception):
     """Exception class to be raised by module.fail_json and caught by the test case"""
 
@@ -44,20 +40,6 @@ def set_module_args(args):
     """prepare arguments so that they will be picked up during module creation"""
     arg_str = json.dumps({'ANSIBLE_MODULE_ARGS': args})
     basic._ANSIBLE_ARGS = to_bytes(arg_str)  # pylint: disable=protected-access
-
-
-def exit_json(self, **kwargs):
-    # type: (stow.AnsibleModule, typing.Any) -> typing.NoReturn
-    """raises AnsibleExitJson. Mock exit_json method of AnsibleModule class for testing purposes"""
-    raise AnsibleExitJson(kwargs)
-
-
-# def fail_json(self, msg, **kwargs):  # pylint: disable=unused-argument
-#     # type: (stow.AnsibleModule, typing.Any, typing.Any) -> typing.NoReturn
-#     """raises AnsibleFailJson. Mock fail_json method of AnsibleModule class for testing purposes"""
-#     kwargs['failed'] = True
-#     kwargs['msg'] = msg
-#     raise AnsibleFailJson(kwargs)
 
 
 class TestModuleInit(TestCase):
@@ -289,6 +271,28 @@ class TestCommandResultParsing(TestCase):
         self.assertEqual(result['stdout_lines'], 'this is standard out.\n'.splitlines())
         self.assertEqual(result['stderr'], 'this is standard error.\nIt has an error.')
         self.assertEqual(result['stderr_lines'], 'this is standard error.\nIt has an error.'.splitlines())
+
+
+class TestPurgeFileConflicts(TestCase):
+    """Tests function that deletes conflicting files if there are any."""
+
+    def test_returns_false_when_no_files_to_remove(self):
+        """Tests that the function returns false when no files have been removed."""
+        stderr = 'LINK: .zshrc => .dotfiles/zsh/.zshrc'
+        result = stow.purge_file_conflicts(stderr, '/home/user')
+        self.assertFalse(result)
+
+    def test_removes_conflicting_files(self):
+        """Tests that the function makes a call to os.remove to remove the conflicting files"""
+        stderr = 'WARNING! stowing zsh would cause conflicts:\n  * existing target is neither a link nor a directory: .zshrc\nAll operations aborted.\n'
+
+        def remove(path):
+            raise AnsibleFailJson(path)
+
+        stow.os.remove = remove
+        with self.assertRaises(AnsibleFailJson):
+            result = stow.purge_file_conflicts(stderr, '/home/user')
+            self.assertTrue(result)
 
 
 if __name__ == '__main__':

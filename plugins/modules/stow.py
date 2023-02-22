@@ -109,6 +109,11 @@ from ansible.module_utils.basic import AnsibleModule
 # pylint: enable=wrong-import-position
 
 
+SUCCESS = 0
+FILE_CONFLICT = 1
+DIRECTORY_CONFLICT = 2
+
+
 State = {
     'present': '--stow',
     'absent': '--delete',
@@ -182,7 +187,7 @@ def generate_stow_command(params, simulate):
 
 
 def parse_command_result(return_code, stdout, stderr):
-    # type: (int, str, str) -> dict[str, str | int | list[str]]
+    # type: (int, str, str) -> dict[str, int | str | list[str]]
     """Takes the outputs from run_command & stores them in a dictionary.
     Adds stdout & stderr lines to dictionary too."""
     stdout_lines = stdout.splitlines()
@@ -196,11 +201,32 @@ def parse_command_result(return_code, stdout, stderr):
     }
 
 
+def purge_file_conflicts(stderr, target_path):
+    # type: (str, str) -> bool
+    """Takes stderr of stow command as input, removes any files
+    that were in conflict & return whether files were removed or not."""
+    conflict_files = [
+        conflict_err.split(':')[-1].strip()
+        for conflict_err in stderr.splitlines()
+        if '* existing target is' in conflict_err
+    ]
+
+    if conflict_files == []:
+        return False
+
+    for conflict_file in conflict_files:
+        conflict_path = os.path.join(target_path, conflict_file)
+        os.remove(conflict_path)
+
+    return True
+
+
 def main():
     # type: () -> None
     """Runs Ansible stow module"""
     module = init_module()
     params = init_params(module.params)
+    changed = False
 
     validate_directories([params.source_directory, params.target_directory], module.fail_json)
 
@@ -211,13 +237,19 @@ def main():
     if module.check_mode:
         module.exit_json(**result)
 
+    if return_code == DIRECTORY_CONFLICT or (return_code == FILE_CONFLICT and not params.force):
+        module.fail_json('Unable to stow package(s) due to conflicts in target directory. See stderr for details.', **result)
+
+    if return_code == FILE_CONFLICT:
+        changed = changed or purge_file_conflicts(stderr, params.target_directory)
+
     cmd = generate_stow_command(params, False)
     return_code, stdout, stderr = module.run_command(cmd)
     result = parse_command_result(return_code, stdout, stderr)
 
-    result['changed'] = return_code == 0 and 'LINK:' in stderr
+    result['changed'] = changed or (return_code == SUCCESS and 'LINK:' in stderr)
 
-    if return_code != 0:
+    if return_code != SUCCESS:
         module.fail_json('Error occurred during stow execution. See stderr for details.', **result)
 
     module.exit_json(**result)
