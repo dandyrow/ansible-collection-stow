@@ -1,6 +1,6 @@
 namespace: dandyrow
 name: stow
-version: 1.0.0
+version: 1.0.1
 readme: README.md
 authors:
 - Daniel Lowry <development@daniellowry.co.uk>
