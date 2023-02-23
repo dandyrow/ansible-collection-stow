@@ -9,7 +9,7 @@
 
 # This program is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 # GNU General Public License for more details.
 
 # You should have received a copy of the GNU General Public License
@@ -113,6 +113,9 @@ SUCCESS = 0
 FILE_CONFLICT = 1
 DIRECTORY_CONFLICT = 2
 
+CONFLICT_ERR_MSG = ('Unable to stow package(s) due to conflicts in target directory.'
+                    'See stderr for details.')
+EXEC_ERR_MSG = 'Error occurred during stow execution. See stderr for details.'
 
 State = {
     'present': '--stow',
@@ -160,17 +163,17 @@ def init_params(module_params):
     )
 
 
-def validate_directories(directories, fail_func):
-    """Call passed in function if any of the passed in directories don't exist.
-    Function must take a message str as first argument"""
+def validate_directories(directories):
+    # type: (list[str]) -> str
+    """Checks every directory in the passed in list exists and is a directory.
+    Returns empty string if all are directories or an error message if any aren't."""
     err_msg = ''
 
     for directory in directories:
         if not os.path.isdir(directory):
             err_msg += 'Diretory \'{0}\' does not exist or is not a directory. '.format(directory)
 
-    if err_msg != '':
-        fail_func(err_msg)
+    return err_msg
 
 
 def generate_stow_command(params, simulate):
@@ -188,8 +191,7 @@ def generate_stow_command(params, simulate):
 
 def parse_command_result(return_code, stdout, stderr):
     # type: (int, str, str) -> dict[str, int | str | list[str]]
-    """Takes the outputs from run_command & stores them in a dictionary.
-    Adds stdout & stderr lines to dictionary too."""
+    """Parses the output of the stow command into a result dictionary"""
     stdout_lines = stdout.splitlines()
     stderr_lines = stderr.splitlines()
     return {
@@ -228,7 +230,9 @@ def main():
     params = init_params(module.params)
     changed = False
 
-    validate_directories([params.source_directory, params.target_directory], module.fail_json)
+    err = validate_directories([params.source_directory, params.target_directory])
+    if err != '':
+        module.fail_json(err)
 
     cmd = generate_stow_command(params, True)
     return_code, stdout, stderr = module.run_command(cmd)
@@ -238,7 +242,7 @@ def main():
         module.exit_json(**result)
 
     if return_code == DIRECTORY_CONFLICT or (return_code == FILE_CONFLICT and not params.force):
-        module.fail_json('Unable to stow package(s) due to conflicts in target directory. See stderr for details.', **result)
+        module.fail_json(CONFLICT_ERR_MSG, **result)
 
     if return_code == FILE_CONFLICT:
         changed = changed or purge_file_conflicts(stderr, params.target_directory)
@@ -250,7 +254,7 @@ def main():
     result['changed'] = changed or (return_code == SUCCESS and 'LINK:' in stderr)
 
     if return_code != SUCCESS:
-        module.fail_json('Error occurred during stow execution. See stderr for details.', **result)
+        module.fail_json(EXEC_ERR_MSG, **result)
 
     module.exit_json(**result)
 

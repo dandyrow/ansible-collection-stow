@@ -20,24 +20,26 @@ from __future__ import (absolute_import, division, print_function)
 __metaclass__ = type
 
 
-# import unittest
 import json
 
 from unittest import TestCase, main
-# from unittest.mock import patch
 from ansible.module_utils import basic
 from ansible.module_utils.compat import typing
 from ansible.module_utils.common.text.converters import to_bytes
 from ansible_collections.dandyrow.stow.plugins.modules import stow
+try:
+    from unittest.mock import patch
+except ImportError:
+    from mock import patch  # type: ignore
 
 
 class AnsibleFailJson(Exception):
-    """Exception class to be raised by module.fail_json and caught by the test case"""
+    """Exception class for raised by mocked fail_json function instead of exiting"""
 
 
 def set_module_args(args):
     # type: (dict[str, bool | str | typing.List[str]]) -> None
-    """prepare arguments so that they will be picked up during module creation"""
+    """Prepare module arguments so they will be picked up during module initiation"""
     arg_str = json.dumps({'ANSIBLE_MODULE_ARGS': args})
     basic._ANSIBLE_ARGS = to_bytes(arg_str)  # pylint: disable=protected-access
 
@@ -49,7 +51,7 @@ class TestModuleInit(TestCase):
         """Sets up mock functions for use during tests"""
 
         def fail_json(self, msg, **kwargs):  # pylint: disable=unused-argument
-            """Raise AnsibleFailJson exception with kwargs"""
+            """Raise AnsibleFailJson exception with kwargs instead of exiting"""
             kwargs['failed'] = True
             kwargs['msg'] = msg
             raise AnsibleFailJson(kwargs)
@@ -198,6 +200,32 @@ class TestParamsInit(TestCase):
         self.assertTupleEqual(expected_params, actual_params)
 
 
+class TestDirValidation(TestCase):
+    """Tests for stow directory validation function"""
+
+    def isdir(self, path):
+        # type: (str) -> bool
+        """Return True if path is /this/path/exists otherwise return False"""
+        return path == '/this/path/exists' or path == '/etc'
+
+    @patch('ansible_collections.dandyrow.stow.plugins.modules.stow.os.path')
+    def test_dir_not_exist(self, mock_path):
+        """Tests passed in function called if one of passed in directories doesn't exist"""
+        mock_path.isdir = self.isdir
+        expected_result = ('Diretory \'test\' does not exist or is not a directory. '
+                           'Diretory \'folder\' does not exist or is not a directory. ')
+        actual_result = stow.validate_directories(['test', 'folder'])
+        self.assertEqual(expected_result, actual_result)
+
+    @patch('ansible_collections.dandyrow.stow.plugins.modules.stow.os.path')
+    def test_dir_exists(self, mock_path):
+        """Tests that nothing happens if all directories exist"""
+        mock_path.isdir = self.isdir
+        expected_result = ''
+        actual_result = stow.validate_directories(['/this/path/exists', '/etc'])
+        self.assertEqual(expected_result, actual_result)
+
+
 class TestGenerateStowCmd(TestCase):
     """Tests function which generates stow command string"""
 
@@ -210,7 +238,8 @@ class TestGenerateStowCmd(TestCase):
             force=False,
             stow_flag='--stow'
         )
-        expected_result = 'stow --verbose --simulate --dir /src --target /dest --stow zsh --stow neovim'
+        expected_result = ('stow --verbose --simulate --dir /src '
+                           '--target /dest --stow zsh --stow neovim')
         actual_result = stow.generate_stow_command(params, True)
         self.assertEqual(expected_result, actual_result)
 
@@ -228,49 +257,22 @@ class TestGenerateStowCmd(TestCase):
         self.assertEqual(expected_result, actual_result)
 
 
-class TestDirValidation(TestCase):
-    """Tests for stow directory validation function"""
-
-    def isdir(self, path):
-        # type: (str) -> bool
-        """Return True if path is /this/path/exists otherwise return False"""
-        return path == '/this/path/exists'
-
-    def fail_json(self, msg, **kwargs):
-        """Raise AnsibleFailJson exception with kwargs"""
-        kwargs['failed'] = True
-        kwargs['msg'] = msg
-        raise AnsibleFailJson(kwargs)
-
-    def test_calls_function_if_dir_not_exist(self):
-        """Tests passed in function called if one of passed in directories doesn't exist"""
-        stow.os.path.isdir = self.isdir
-
-        with self.assertRaises(AnsibleFailJson):
-            stow.validate_directories(['test', 'folder'], self.fail_json)
-
-    def test_function_does_nothing_if_dir_exists(self):
-        """Tests that nothing happens if all directories exist"""
-        stow.os.path.isdir = self.isdir
-        stow.validate_directories(['/this/path/exists'], self.fail_json)
-
-
 class TestCommandResultParsing(TestCase):
     """Tests the command result parsing function"""
 
     def test_parses_values_to_dictionary(self):
-        """Tests the command result parsing function works correctly"""
+        """Tests the command result parsing function parses command output into result dictionary"""
         return_code = 2
         stdout = 'this is standard out.\n'
-        stderr = 'this is standard error.\nIt has an error.'
+        stderr = 'Standard error.\nIt has an error.'
 
         result = stow.parse_command_result(return_code, stdout, stderr)
 
         self.assertEqual(result['rc'], 2)
         self.assertEqual(result['stdout'], 'this is standard out.\n')
         self.assertEqual(result['stdout_lines'], 'this is standard out.\n'.splitlines())
-        self.assertEqual(result['stderr'], 'this is standard error.\nIt has an error.')
-        self.assertEqual(result['stderr_lines'], 'this is standard error.\nIt has an error.'.splitlines())
+        self.assertEqual(result['stderr'], 'Standard error.\nIt has an error.')
+        self.assertEqual(result['stderr_lines'], 'Standard error.\nIt has an error.'.splitlines())
 
 
 class TestPurgeFileConflicts(TestCase):
@@ -284,7 +286,9 @@ class TestPurgeFileConflicts(TestCase):
 
     def test_removes_conflicting_files(self):
         """Tests that the function makes a call to os.remove to remove the conflicting files"""
-        stderr = 'WARNING! stowing zsh would cause conflicts:\n  * existing target is neither a link nor a directory: .zshrc\nAll operations aborted.\n'
+        stderr = ('WARNING! stowing zsh would cause conflicts:\n  '
+                  '* existing target is neither a link nor a directory: .zshrc\n'
+                  'All operations aborted.\n')
 
         def remove(path):
             raise AnsibleFailJson(path)
