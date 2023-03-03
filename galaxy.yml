@@ -1,10 +1,10 @@
 namespace: dandyrow
 name: stow
-version: 1.0.1
+version: 1.0.2
 readme: README.md
 authors:
 - Daniel Lowry <development@daniellowry.co.uk>
-description: Ansible module to interact with GNU stow utility
+description: "[Deprecated] Ansible module to interact with GNU stow utility"
 license:
 - GPL-3.0-only
 tags:

@@ -1,8 +1,8 @@
-# Ansible Collection - dandyrow.stow
+# [Deprecated] Ansible Collection - dandyrow.stow
 
-**The contents of this collection is moving to the [dandyrow.iac](https://github.com/dandyrow/dandyrow.iac) collection**
+**The contents of this collection has moved to the [dandyrow.iac](https://github.com/dandyrow/dandyrow.iac) collection**
 
-This collection will be **depricated** in the next release.
+This collection has now been **deprecated**.
 
 This change is being made due to unforseen ways Ansible handles collection and role dependencies. The new collection, [dandyrow.iac](https://github.com/dandyrow/dandyrow.iac), will have a wider purpose above and beyond using stow with Ansible.
 
